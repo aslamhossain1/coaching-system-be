@@ -1,0 +1,36 @@
+import django.db.models.deletion
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+    initial = True
+
+    dependencies = [
+        ("teachers", "0001_initial"),
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name="Guardian",
+            fields=[
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("full_name", models.CharField(max_length=255)),
+                ("email", models.EmailField(max_length=254, unique=True)),
+                ("phone", models.CharField(blank=True, max_length=20)),
+                ("address", models.TextField(blank=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+            ],
+        ),
+        migrations.CreateModel(
+            name="Student",
+            fields=[
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("full_name", models.CharField(max_length=255)),
+                ("email", models.EmailField(max_length=254, unique=True)),
+                ("phone", models.CharField(blank=True, max_length=20)),
+                ("batch", models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name="students", to="teachers.batch")),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("guardian", models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name="students", to="students.guardian")),
+            ],
+        ),
+    ]
