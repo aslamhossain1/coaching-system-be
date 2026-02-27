@@ -12,3 +12,5 @@ COPY . /app
 
 EXPOSE 8000
 
+# CMD or ENTRYPOINT: gunicorn running in foreground
+CMD ["gunicorn", "coaching_system_be.asgi:application", "-b", "0.0.0.0:8000", "--workers", "3"]
