@@ -13,5 +13,5 @@ COPY . /app
 ENV PORT=8000
 EXPOSE $PORT
 
-# ASGI server for Django
-CMD ["uvicorn", "coaching_system_be.asgi:application", "--host", "0.0.0.0", "--port", "8000"]
+# Render provides a dynamic PORT; bind Gunicorn to it.
+CMD ["sh", "-c", "gunicorn coaching_system_be.wsgi:application --bind 0.0.0.0:${PORT:-8000}"]
