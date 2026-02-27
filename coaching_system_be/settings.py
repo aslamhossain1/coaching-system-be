@@ -1,13 +1,48 @@
 import os
 from pathlib import Path
 from datetime import timedelta
+import dj_database_url
+from dotenv import load_dotenv
 
+# -----------------------------
+# Base Directory & Env Load
+# -----------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(BASE_DIR / ".env")
 
+
+# -----------------------------
+# Helper functions
+# -----------------------------
+def get_bool_env(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def get_list_env(name: str, default: str = "") -> list[str]:
+    raw = os.getenv(name, default)
+    return [item.strip() for item in raw.split(",") if item.strip()]
+
+
+# -----------------------------
+# Core Settings
+# -----------------------------
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "change-me-in-production")
-DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() == "true"
-ALLOWED_HOSTS = [h.strip() for h in os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(",") if h.strip()]
+DEBUG = get_bool_env("DJANGO_DEBUG", default=False)
 
+ALLOWED_HOSTS = get_list_env(
+    "DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,.onrender.com"
+)
+CSRF_TRUSTED_ORIGINS = get_list_env(
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    "http://127.0.0.1:3000,http://localhost:3000,https://edutrack-app-one.vercel.app",
+)
+
+# -----------------------------
+# Installed Apps
+# -----------------------------
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -15,9 +50,13 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
+    # Third-party
     "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt",
+
+    # Project apps
     "students",
     "teachers",
     "attendance",
@@ -27,8 +66,12 @@ INSTALLED_APPS = [
     "notifications",
 ]
 
+# -----------------------------
+# Middleware
+# -----------------------------
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -40,6 +83,9 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "coaching_system_be.urls"
 
+# -----------------------------
+# Templates
+# -----------------------------
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
@@ -55,12 +101,27 @@ TEMPLATES = [
     },
 ]
 
+# -----------------------------
+# WSGI / ASGI
+# -----------------------------
 WSGI_APPLICATION = "coaching_system_be.wsgi.application"
 ASGI_APPLICATION = "coaching_system_be.asgi.application"
 
+# -----------------------------
+# Database Config (Supabase + fallback)
+# -----------------------------
+DATABASE_URL = os.getenv("DATABASE_URL")
 DB_ENGINE = os.getenv("DB_ENGINE", "sqlite").lower()
 
-if DB_ENGINE == "postgres":
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=not DEBUG,
+        )
+    }
+elif DB_ENGINE == "postgres":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
@@ -68,7 +129,7 @@ if DB_ENGINE == "postgres":
             "USER": os.getenv("POSTGRES_USER", "postgres"),
             "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres"),
             "HOST": os.getenv("POSTGRES_HOST", "localhost"),
-            "PORT": os.getenv("POSTGRES_PORT", "5433"),
+            "PORT": os.getenv("POSTGRES_PORT", "5432"),
         }
     }
 else:
@@ -79,6 +140,9 @@ else:
         }
     }
 
+# -----------------------------
+# Password Validators
+# -----------------------------
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
     {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
@@ -86,14 +150,28 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+# -----------------------------
+# Localization
+# -----------------------------
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
+# -----------------------------
+# Static Files (Whitenoise)
+# -----------------------------
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
+
+if not DEBUG:
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# -----------------------------
+# REST Framework + JWT
+# -----------------------------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -111,10 +189,22 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-CORS_ALLOWED_ORIGINS = [
-    origin.strip()
-    for origin in os.getenv("CORS_ALLOWED_ORIGINS", "http://127.0.0.1:3000,http://localhost:3000").split(",")
-    if origin.strip()
-]
-
+# -----------------------------
+# CORS
+# -----------------------------
+CORS_ALLOWED_ORIGINS = get_list_env(
+    "CORS_ALLOWED_ORIGINS", "http://127.0.0.1:3000,http://localhost:3000,https://edutrack-app-one.vercel.app"
+)
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = get_bool_env("CORS_ALLOW_ALL_ORIGINS", default=False)
+
+# -----------------------------
+# Security (SSL / Proxies)
+# -----------------------------
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
+
+if not DEBUG:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = get_bool_env("SECURE_SSL_REDIRECT", default=True)

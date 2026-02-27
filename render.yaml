@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: coaching-system-be
+    env: python
+    plan: free
+    rootDir: coaching-system-be
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate
+    startCommand: gunicorn coaching_system_be.wsgi:application --bind 0.0.0.0:$PORT
+    autoDeploy: true
+    envVars:
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: DJANGO_ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: DJANGO_CSRF_TRUSTED_ORIGINS
+        value: "https://edutrack-app-one.vercel.app"
+      - key: CORS_ALLOWED_ORIGINS
+        value: "https://edutrack-app-one.vercel.app"
+      - key: SECURE_SSL_REDIRECT
+        value: "True"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: coaching-system-db
+          property: connectionString
+
+databases:
+  - name: coaching-system-db
+    plan: free
