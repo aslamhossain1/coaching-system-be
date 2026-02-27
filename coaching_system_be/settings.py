@@ -4,40 +4,30 @@ from datetime import timedelta
 import dj_database_url
 from dotenv import load_dotenv
 
-# -----------------------------
-# Base Directory & Env Load
-# -----------------------------
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
-
 
 # -----------------------------
 # Helper functions
 # -----------------------------
 def get_bool_env(name: str, default: bool = False) -> bool:
-    raw = os.getenv(name)
-    if raw is None:
-        return default
-    return raw.strip().lower() in {"1", "true", "yes", "on"}
-
+    val = os.getenv(name)
+    return val.strip().lower() in {"1","true","yes","on"} if val else default
 
 def get_list_env(name: str, default: str = "") -> list[str]:
     raw = os.getenv(name, default)
-    return [item.strip() for item in raw.split(",") if item.strip()]
-
+    return [x.strip() for x in raw.split(",") if x.strip()]
 
 # -----------------------------
-# Core Settings
+# Core settings
 # -----------------------------
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "change-me-in-production")
-DEBUG = get_bool_env("DJANGO_DEBUG", default=False)
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+DEBUG = get_bool_env("DJANGO_DEBUG")
 
-ALLOWED_HOSTS = get_list_env(
-    "DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,.onrender.com"
-)
+ALLOWED_HOSTS = get_list_env("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,.onrender.com")
 CSRF_TRUSTED_ORIGINS = get_list_env(
     "DJANGO_CSRF_TRUSTED_ORIGINS",
-    "http://127.0.0.1:3000,http://localhost:3000,https://edutrack-app-one.vercel.app",
+    "http://127.0.0.1:3000,http://localhost:3000,https://edutrack-app-one.vercel.app"
 )
 
 # -----------------------------
@@ -51,12 +41,10 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
 
-    # Third-party
     "corsheaders",
     "rest_framework",
     "rest_framework_simplejwt",
 
-    # Project apps
     "students",
     "teachers",
     "attendance",
@@ -108,7 +96,7 @@ WSGI_APPLICATION = "coaching_system_be.wsgi.application"
 ASGI_APPLICATION = "coaching_system_be.asgi.application"
 
 # -----------------------------
-# Database Config (Supabase + fallback)
+# Database
 # -----------------------------
 DATABASE_URL = os.getenv("DATABASE_URL")
 DB_ENGINE = os.getenv("DB_ENGINE", "sqlite").lower()
@@ -118,18 +106,18 @@ if DATABASE_URL:
         "default": dj_database_url.parse(
             DATABASE_URL,
             conn_max_age=600,
-            ssl_require=not DEBUG,
+            ssl_require=True,
         )
     }
 elif DB_ENGINE == "postgres":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.getenv("POSTGRES_DB", "coaching_db"),
-            "USER": os.getenv("POSTGRES_USER", "postgres"),
-            "PASSWORD": os.getenv("POSTGRES_PASSWORD", "postgres"),
-            "HOST": os.getenv("POSTGRES_HOST", "localhost"),
-            "PORT": os.getenv("POSTGRES_PORT", "5432"),
+            "NAME": os.getenv("POSTGRES_DB"),
+            "USER": os.getenv("POSTGRES_USER"),
+            "PASSWORD": os.getenv("POSTGRES_PASSWORD"),
+            "HOST": os.getenv("POSTGRES_HOST"),
+            "PORT": os.getenv("POSTGRES_PORT"),
         }
     }
 else:
@@ -141,7 +129,7 @@ else:
     }
 
 # -----------------------------
-# Password Validators
+# Password validation
 # -----------------------------
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -159,7 +147,7 @@ USE_I18N = True
 USE_TZ = True
 
 # -----------------------------
-# Static Files (Whitenoise)
+# Static Files
 # -----------------------------
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
@@ -192,11 +180,9 @@ SIMPLE_JWT = {
 # -----------------------------
 # CORS
 # -----------------------------
-CORS_ALLOWED_ORIGINS = get_list_env(
-    "CORS_ALLOWED_ORIGINS", "http://127.0.0.1:3000,http://localhost:3000,https://edutrack-app-one.vercel.app"
-)
+CORS_ALLOWED_ORIGINS = get_list_env("CORS_ALLOWED_ORIGINS")
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_ALL_ORIGINS = get_bool_env("CORS_ALLOW_ALL_ORIGINS", default=False)
+CORS_ALLOW_ALL_ORIGINS = get_bool_env("CORS_ALLOW_ALL_ORIGINS")
 
 # -----------------------------
 # Security (SSL / Proxies)
@@ -207,4 +193,4 @@ USE_X_FORWARDED_HOST = True
 if not DEBUG:
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    SECURE_SSL_REDIRECT = get_bool_env("SECURE_SSL_REDIRECT", default=True)
+    SECURE_SSL_REDIRECT = get_bool_env("SECURE_SSL_REDIRECT", True)
