@@ -10,7 +10,8 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY . /app
 
-EXPOSE 8000
+# Render sets this automatically
+ENV PORT=8000
+EXPOSE $PORT
 
-# CMD or ENTRYPOINT: gunicorn running in foreground
-CMD ["gunicorn", "coaching_system_be.asgi:application", "-b", "0.0.0.0:8000", "--workers", "3"]
+CMD ["gunicorn", "coaching_system_be.asgi:application", "-b", "0.0.0.0:$PORT", "--workers", "3"]
