@@ -10,8 +10,8 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY . /app
 
-# Render sets this automatically
 ENV PORT=8000
 EXPOSE $PORT
 
-CMD ["gunicorn", "coaching_system_be.asgi:application", "-b", "0.0.0.0:$PORT", "--workers", "3"]
+# ASGI server for Django
+CMD ["uvicorn", "coaching_system_be.asgi:application", "--host", "0.0.0.0", "--port", "8000"]
