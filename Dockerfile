@@ -13,5 +13,5 @@ COPY . /app
 ENV PORT=8000
 EXPOSE $PORT
 
-# Render provides a dynamic PORT; bind Gunicorn to it.
-CMD ["sh", "-c", "gunicorn coaching_system_be.wsgi:application --bind 0.0.0.0:${PORT:-8000}"]
+# Render deploy currently uses Docker. Run migrations/static then start Gunicorn on dynamic PORT.
+CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn coaching_system_be.wsgi:application --bind 0.0.0.0:${PORT:-8000}"]
