@@ -21,6 +21,7 @@ class Teacher(models.Model):
     batch = models.ForeignKey("teachers.Batch", on_delete=models.SET_NULL, null=True, blank=True, related_name="teachers")
     created_at = models.DateTimeField(auto_now_add=True)
 
+
     def __str__(self):
         return self.full_name
 
